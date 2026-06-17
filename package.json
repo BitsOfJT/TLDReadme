@@ -1,0 +1,39 @@
+{
+  "name": "tldreadme",
+  "version": "0.1.0",
+  "description": "Instantly understand any GitHub project — plain-English TLDR summaries of any README",
+  "type": "module",
+  "bin": {
+    "tldreadme": "dist/cli.js",
+    "tldreadme-mcp": "dist/mcp.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "readme",
+    "tldr",
+    "github",
+    "mcp",
+    "cli",
+    "summarize"
+  ],
+  "license": "MIT"
+}
