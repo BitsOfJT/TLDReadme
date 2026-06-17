@@ -42,7 +42,12 @@ export ANTHROPIC_API_KEY=your_key_here
 
 ## MCP Usage (inside an agent)
 
-Add to your MCP config:
+The MCP server uses your agent's own AI model — no separate API key needed.
+
+### Claude Code
+
+1. Open (or create) `~/.claude/settings.json`
+2. Add the `tldreadme` entry under `mcpServers`:
 
 ```json
 {
@@ -54,16 +59,32 @@ Add to your MCP config:
 }
 ```
 
-**In Claude Code:** add to `.claude/settings.json`
+3. Restart Claude Code
+4. Verify it loaded by running `/mcp` — you should see `tldreadme` listed as connected
 
-**In claude.ai:** add to your MCP settings
+Then just ask Claude to summarize a README:
+> "Use tldreadme to summarize https://github.com/user/repo"
 
-Once connected, two tools are available:
+Claude will call `tldreadme_fetch` to get the README, generate the TLDR using its own model, then call `tldreadme_save` to write `TLDReadme.md` and print the result.
 
-- **`tldreadme_fetch`** — pass a GitHub URL or README text; returns the content with summarization instructions for your agent to process
-- **`tldreadme_save`** — pass the generated TLDR; saves it to `TLDReadme.md` and prints it to the terminal
+### Other MCP-compatible agents
 
-The MCP server uses your agent's own AI model — no separate API key needed.
+Add the same config block to your agent's MCP settings file:
+
+```json
+{
+  "mcpServers": {
+    "tldreadme": {
+      "command": "tldreadme-mcp"
+    }
+  }
+}
+```
+
+### Available tools
+
+- **`tldreadme_fetch`** — pass a GitHub URL or raw README text; returns the content with summarization instructions for your agent to process
+- **`tldreadme_save`** — pass the generated TLDR; saves it to `TLDReadme.md` in the current directory and prints it to the terminal
 
 ---
 
@@ -86,7 +107,7 @@ Written for a mixed audience — a beginner should understand it, a professional
 ## Local Development
 
 ```bash
-git clone https://github.com/BitsOfJT/tldreadme
+git clone https://github.com/BitsOfJT/TLDReadme
 cd tldreadme
 npm install
 npm run build
