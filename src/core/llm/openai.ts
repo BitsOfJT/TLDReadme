@@ -1,4 +1,3 @@
-import OpenAI from 'openai';
 import type { ProviderCredentials } from '../config.js';
 
 const DEFAULT_MODEL_OPENAI = 'gpt-4o';
@@ -16,22 +15,36 @@ export async function generate(
     );
   }
 
-  const client = new OpenAI({
-    apiKey: provider === 'ollama' ? 'ollama' : credentials.apiKey,
-    baseURL:
-      provider === 'ollama'
-        ? (credentials.baseUrl ?? 'http://localhost:11434/v1')
-        : undefined,
+  const apiKey = provider === 'ollama' ? 'ollama' : credentials.apiKey;
+  let baseURL =
+    provider === 'ollama'
+      ? (credentials.baseUrl ?? 'http://localhost:11434/v1')
+      : 'https://api.openai.com/v1';
+
+  if (provider === 'ollama' && credentials.baseUrl && !baseURL.endsWith('/v1')) {
+    baseURL = baseURL.replace(/\/?$/, '/v1');
+  }
+
+  const res = await fetch(`${baseURL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: model ?? DEFAULT_MODEL_OPENAI,
+      max_tokens: 1024,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+    }),
   });
 
-  const response = await client.chat.completions.create({
-    model: model ?? DEFAULT_MODEL_OPENAI,
-    max_tokens: 1024,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage },
-    ],
-  });
+  if (!res.ok) {
+    throw new Error(`${provider} API error: ${res.status} ${await res.text()}`);
+  }
 
-  return response.choices[0]?.message.content ?? '';
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? '';
 }

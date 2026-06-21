@@ -15,11 +15,8 @@
     "dist"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
-    "@google/genai": "^2.8.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "commander": "^12.0.0",
-    "openai": "^6.43.0"
+    "commander": "^12.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

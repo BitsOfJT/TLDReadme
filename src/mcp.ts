@@ -5,9 +5,10 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 import { fetchReadme } from './core/fetcher.js';
-import { SYSTEM_PROMPT, buildUserMessage } from './core/prompt.js';
-import { writeTldr } from './core/writer.js';
+import { SYSTEM_PROMPT } from './core/prompt.js';
 
 const server = new Server(
   { name: 'tldreadme', version: '0.1.0' },
@@ -67,7 +68,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const readmeContent = await fetchReadme(input);
-      const payload = `${SYSTEM_PROMPT}\n\n---\n\n${buildUserMessage(readmeContent)}`;
+      const payload =
+        `${SYSTEM_PROMPT}\n\n---\n\n` +
+        `Here is the README to summarize:\n\n---\n\n` +
+        `${readmeContent}\n\n---\n\n` +
+        `Please produce the TLDR now, following the format exactly.`;
       return {
         content: [{ type: 'text' as const, text: payload }],
       };
@@ -94,7 +99,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     try {
-      const filePath = await writeTldr(tldr);
+      const filePath = join(process.cwd(), 'TLDReadme.md');
+      await writeFile(filePath, tldr, 'utf-8');
       return {
         content: [{ type: 'text' as const, text: `TLDR saved to ${filePath}` }],
       };

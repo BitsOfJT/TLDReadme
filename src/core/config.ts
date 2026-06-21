@@ -12,13 +12,11 @@ export interface TldreadmeConfig {
   providers: Record<string, ProviderCredentials>;
 }
 
-export function getConfigPath(): string {
-  return join(homedir(), '.config', 'tldreadme', 'config.json');
-}
+const CONFIG_PATH = join(homedir(), '.config', 'tldreadme', 'config.json');
 
 export async function loadConfig(): Promise<TldreadmeConfig> {
   try {
-    const content = await readFile(getConfigPath(), 'utf-8');
+    const content = await readFile(CONFIG_PATH, 'utf-8');
     return JSON.parse(content) as TldreadmeConfig;
   } catch {
     return { providers: {} };
@@ -26,11 +24,10 @@ export async function loadConfig(): Promise<TldreadmeConfig> {
 }
 
 export async function saveConfig(config: TldreadmeConfig): Promise<void> {
-  const configPath = getConfigPath();
   const configDir = join(homedir(), '.config', 'tldreadme');
   await mkdir(configDir, { recursive: true });
-  await writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
-  await chmod(configPath, 0o600);
+  await writeFile(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8');
+  await chmod(CONFIG_PATH, 0o600);
 }
 
 export async function resolveProvider(

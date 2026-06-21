@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
 import type { ProviderCredentials } from '../config.js';
 
 const DEFAULT_MODEL = 'gemini-2.0-flash';
@@ -9,16 +8,25 @@ export async function generate(
   credentials: ProviderCredentials,
   model?: string
 ): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: credentials.apiKey });
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${
+      model ?? DEFAULT_MODEL
+    }:generateContent?key=${encodeURIComponent(credentials.apiKey!)}`;
 
-  const response = await ai.models.generateContent({
-    model: model ?? DEFAULT_MODEL,
-    contents: userMessage,
-    config: {
-      systemInstruction: systemPrompt,
-      maxOutputTokens: 1024,
-    },
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: { maxOutputTokens: 1024 },
+    }),
   });
 
-  return response.text ?? '';
+  if (!res.ok) {
+    throw new Error(`Gemini API error: ${res.status} ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }

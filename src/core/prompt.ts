@@ -31,7 +31,3 @@ OUTPUT FORMAT — use exactly these five section headers, in this order:
 
 ## Gotchas / caveats
 [Real warnings and things that trip people up. If none are mentioned in the README, write "None mentioned in the README."]`;
-
-export function buildUserMessage(readmeContent: string): string {
-  return `Here is the README to summarize:\n\n---\n\n${readmeContent}\n\n---\n\nPlease produce the TLDR now, following the format exactly.`;
-}

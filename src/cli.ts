@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import readline from 'readline';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 import { fetchReadme } from './core/fetcher.js';
-import { writeTldr } from './core/writer.js';
 import { loadConfig, saveConfig, resolveProvider } from './core/config.js';
-import { generateTldr } from './core/llm/index.js';
+import { SYSTEM_PROMPT } from './core/prompt.js';
+import { generate as generateClaude } from './core/llm/anthropic.js';
+import { generate as generateOpenAI } from './core/llm/openai.js';
+import { generate as generateGemini } from './core/llm/gemini.js';
 
 const PROVIDERS = ['claude', 'openai', 'gemini', 'ollama'] as const;
 type Provider = (typeof PROVIDERS)[number];
@@ -33,8 +37,32 @@ program
 
       console.log(`Generating TLDR with ${providerName}...`);
 
-      const tldr = await generateTldr(providerName, options?.model, readmeText, credentials);
-      const filePath = await writeTldr(tldr);
+      const systemPrompt = SYSTEM_PROMPT;
+      const userMessage = `Here is the README to summarize:\n\n---\n\n${readmeText}\n\n---\n\nPlease produce the TLDR now, following the format exactly.`;
+
+      let tldr: string;
+      switch (providerName) {
+        case 'claude':
+          tldr = await generateClaude(systemPrompt, userMessage, credentials, options?.model);
+          break;
+        case 'openai':
+          tldr = await generateOpenAI(systemPrompt, userMessage, credentials, 'openai', options?.model);
+          break;
+        case 'ollama':
+          tldr = await generateOpenAI(systemPrompt, userMessage, credentials, 'ollama', options?.model);
+          break;
+        case 'gemini':
+          tldr = await generateGemini(systemPrompt, userMessage, credentials, options?.model);
+          break;
+        default:
+          throw new Error(
+            `Unknown provider: "${providerName}". Supported: claude, openai, gemini, ollama`
+          );
+      }
+
+      console.log('\n' + tldr + '\n');
+      const filePath = join(process.cwd(), 'TLDReadme.md');
+      await writeFile(filePath, tldr, 'utf-8');
       console.log(`Saved to ${filePath}`);
     } catch (err) {
       console.error('Error:', err instanceof Error ? err.message : String(err));
@@ -64,7 +92,7 @@ program
         openai: 'OpenAI API key',
         gemini: 'Google AI API key',
       };
-      const apiKey = await promptSecret(`${labels[provider]}: `);
+      const apiKey = await promptLine(`${labels[provider]}: `);
       if (!apiKey) {
         console.error('Error: API key cannot be empty.');
         process.exit(1);
@@ -81,7 +109,7 @@ program
     const isDefault = config.defaultProvider === provider;
     console.log(
       isDefault
-        ? `Saved. ${capitalize(provider)} is now your default provider.`
+        ? `Saved. ${provider[0].toUpperCase() + provider.slice(1)} is now your default provider.`
         : `Saved. Run: tldreadme --provider ${provider} <url>`
     );
   });
@@ -144,49 +172,6 @@ async function promptLine(question: string): Promise<string> {
       resolve(answer.trim());
     });
   });
-}
-
-async function promptSecret(question: string): Promise<string> {
-  process.stdout.write(question);
-
-  if (!process.stdin.isTTY) {
-    const rl = readline.createInterface({ input: process.stdin });
-    return new Promise((resolve) => {
-      rl.once('line', (line) => {
-        rl.close();
-        resolve(line.trim());
-      });
-    });
-  }
-
-  return new Promise((resolve) => {
-    let input = '';
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-
-    const handler = (char: string) => {
-      if (char === '\r' || char === '\n' || char === '') {
-        process.stdin.setRawMode(false);
-        process.stdin.pause();
-        process.stdin.removeListener('data', handler);
-        process.stdout.write('\n');
-        resolve(input);
-      } else if (char === '') {
-        process.exit(0);
-      } else if (char === '') {
-        if (input.length > 0) input = input.slice(0, -1);
-      } else {
-        input += char;
-      }
-    };
-
-    process.stdin.on('data', handler);
-  });
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 program.parse();
