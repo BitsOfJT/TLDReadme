@@ -15,7 +15,6 @@
     "dist"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "commander": "^12.0.0"
   },

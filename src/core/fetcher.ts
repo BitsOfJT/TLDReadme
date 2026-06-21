@@ -3,8 +3,6 @@ const GITHUB_URL_PATTERN = /^https?:\/\/github\.com\/([^/]+)\/([^/?#]+)/;
 const README_FILENAMES = [
   'README.md',
   'readme.md',
-  'Readme.md',
-  'README.MD',
   'README.rst',
   'readme.rst',
   'README.txt',
